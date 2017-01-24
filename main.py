@@ -40,7 +40,21 @@ class Index(webapp2.RequestHandler):
         """
 
         # TODO 1
-        # Include another form so the user can "cross off" a movie from their list.
+        remove_form = """
+        <form action="/remove" method="post">
+            <label>
+                I want to remove
+            <select name = "removed-movie">
+               <option value = "Bad Boys">Bad Boys</option>
+               <option value = "Ace Ventura">Ace Ventura</option>
+               <option value = "Rogue One">Rogue One</option>
+               <option value = "Die Hard">Die Hard</option>
+             </select>
+                from my watchlist.
+            </label>
+            <input type="submit" value="Remove from list"/>
+        </form>
+        """# Include another form so the user can "cross off" a movie from their list.
 
 
         # TODO 4 (Extra Credit)
@@ -48,7 +62,7 @@ class Index(webapp2.RequestHandler):
         # text box (<input type="text"/>)
 
 
-        content = page_header + edit_header + add_form + page_footer
+        content = page_header + edit_header + add_form + remove_form + page_footer
         self.response.write(content)
 
 
@@ -70,6 +84,17 @@ class AddMovie(webapp2.RequestHandler):
 
 
 # TODO 2
+class CrossOffMovie(webapp2.RequestHandler):
+
+    def post(self):
+
+        removed_movie = self.request.get("removed-movie")
+
+        removed_movie_element = "<strike>" + removed_movie + "</strike>"
+        sentence = removed_movie_element + " has been removed from your Watchlist."
+
+        content = page_header + "<p>" + sentence + "</p>" + page_footer
+        self.response.write(content)
 # Create a new RequestHandler class called CrossOffMovie, to receive and
 # handle the request from your 'cross-off' form. The user should see a message like:
 # "Star Wars has been crossed off your watchlist".
@@ -80,5 +105,7 @@ class AddMovie(webapp2.RequestHandler):
 # Include a route for your cross-off handler, by adding another tuple to the list below.
 app = webapp2.WSGIApplication([
     ('/', Index),
-    ('/add', AddMovie)
+    ('/add', AddMovie),
+    ('/remove', CrossOffMovie)
+
 ], debug=True)
