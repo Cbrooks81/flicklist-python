@@ -23,7 +23,7 @@ class Index(webapp2.RequestHandler):
         movie_2 = self.getRandomMovie()
         while movie == movie_2:
             movie_2 = self.getRandomMovie()
-        content += "<h1>Tommorrows Movie of the Day</h1>"
+        content += "<h1>Tommorrow's Movie of the Day</h1>"
         content += "<p>" + movie_2 + "</p>"
 
         self.response.write(content)
