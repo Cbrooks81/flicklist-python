@@ -11,7 +11,7 @@
             <label>
                 My Rating:
                 <select name="rating">
-                {% for rating in ["How was it?", "*", "**", "***", "****", "*****"] %}
+                {% for rating in ["How was it?","Horrible", "*", "**", "***", "****", "*****"] %}
                     <option {{ "selected" if rating == movie.rating else "" }}>
                         {{ rating }}
                     </option>
