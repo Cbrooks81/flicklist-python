@@ -105,7 +105,8 @@ class MovieRatings(webapp2.RequestHandler):
         content = t.render(movies = getWatchedMovies())
         self.response.write(content)
 
-    # TODO 2
+
+        # TODO 2
     # implement a post method inside this class
     # it should render the rating-confirmation.html template
 
