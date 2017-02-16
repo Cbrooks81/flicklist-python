@@ -3,6 +3,9 @@ import cgi
 import jinja2
 import os
 from google.appengine.ext import db
+import hashutils
+import re
+
 
 # set up jinja
 template_dir = os.path.join(os.path.dirname(__file__), "templates")
@@ -15,6 +18,17 @@ terrible_movies = [
     "Paul Blart: Mall Cop 2",
     "Nine Lives"
 ]
+
+allowed_routes = [
+    "/login",
+    "/logout",
+    "/register"
+]
+
+
+class User(db.Model):
+    username = db.StringProperty(required=True)
+    pw_hash = db.StringProperty(required=True)
 
 
 class Movie(db.Model):
@@ -34,6 +48,34 @@ class Handler(webapp2.RequestHandler):
         self.error(error_code)
         self.response.write("Oops! Something went wrong.")
 
+    def login_user(self, user):
+        user_id = user.key().id()
+        self.set_secure_cookie('user_id', str(user_id))
+
+    def logout_user(self):
+        self.set_secure_cookie('user_id','')
+
+    def set_secure_cookie(self, name, val):
+        cookie_val = hashutils.make_secure_val(val)
+        self.response.headers.add_header('Set-Cookie', '%s=%s; Path=/' % (name, cookie_val))
+
+    def read_secure_cookie(self, name):
+        cookie_val = self.request.cookies.get(name)
+        if cookie_val:
+            return hashutils.check_secure_val(cookie_val)
+
+    def get_user_by_name(self, username):
+        user = db.GqlQuery("SELECT * FROM User WHERE username = '%s'" % username)
+        if user:
+            return user.get()
+
+    def initialize(self, *args, **kwargs):
+        webapp2.RequestHandler.initialize(self, *args, **kwargs)
+        uid = self.read_secure_cookie('user_id')
+        self.user = uid and User.get_by_id(int(uid))
+
+        if not self.user and self.request.path not in allowed_routes:
+            self.redirect('/login')
 
 class Index(Handler):
     """ Handles requests coming in to '/' (the root of our site)
@@ -134,10 +176,109 @@ class MovieRatings(Handler):
         else:
             self.renderError(400)
 
+class Login(Handler):
 
+    def render_login_form(self, error=""):
+        t = jinja_env.get_template("login.html")
+        content = t.render(error = error)
+        self.response.write(content)
+
+    def get(self):
+        self.render_login_form()
+
+    def post(self):
+        submitted_username = self.request('username')
+        submitted_password = self.request('password')
+
+        user = self.get_user_by_name(submitted_username)
+        if not user:
+            self.render_login_form (error = "Invalid Username")
+        elif not hashutils.valid_pw(submitted_username, submitted_password, user.pw_hash)
+            self.render_login_form(error = "Invalid Password")
+        else:
+            self.login_user(user)
+            self.redirect('/')
+
+
+class Logout(Handler):
+
+    def get(self):
+        self.logout_user()
+        self.redirect('/login')
+
+class Register(Handler):
+
+    def validate_username(self, username):
+        USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+        if USER_RE.match(username):
+            return username
+        return ""
+
+    def validate_password(self, password):
+        PWD_RE = re.compile(r"^.{3,20}$s")
+        if PWD_RE.match(passowrd):
+            return password
+        return ""
+
+    def validate_verify(self, password, verify):
+        if password== verify:
+            return verify
+
+    def get(self):
+        t= jinja_env.get_template('register.html')
+        content = t.render(errors{}=)
+        self.response.write(content)
+
+    def post(self):
+        submitted_username = self.request.get('username')
+        submitted_password = self.request.get('password')
+        submitted_verify = self.request.get('verify')
+
+        username =self.validate_username(submitted_username)
+        password =self.validate_password(submitted_password)
+        verify = self.validate_verify(submitted_password,submitted_verify)
+
+        errors ={}
+        existing_user = self.get_user_by_name(username)
+        has_error = False
+
+        if existing_user:
+            errors['username'] = "A User with this name already exists"
+            has_error = True
+        elif (username and password and verify):
+            pw_hash = hashutils.make_pw_hash(username, password)
+            user = User(username = username, pw_hash = pw_hash)
+            user.put()
+
+            self.login_user(user)
+
+        else:
+            has_error = True
+
+            if not username:
+                errors['username'] = 'That\'s not a valid username'
+
+            if not password:
+                errors['password'] = 'That\'s not a valid password'
+
+            if not verify:
+                errors['verify'] = 'Passwords do not match'
+                
+
+        if has_error:
+            t=jinja_env.template("register.html")
+            content = t.render(username=username, errors=errors)
+            self.response.out.write(content)
+
+        else:
+
+            self.redirect('/')
 app = webapp2.WSGIApplication([
     ('/', Index),
     ('/add', AddMovie),
     ('/watched-it', WatchedMovie),
-    ('/ratings', MovieRatings)
+    ('/ratings', MovieRatings),
+    ('/login',Login),
+    ('/logout', Logout),
+    ('/register',Register)
 ], debug=True)

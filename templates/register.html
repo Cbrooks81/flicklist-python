@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>FlickList</title>
+        <style type="text/css">
+            .error {
+                color: red;
+            }
+        </style>
+    </head>
+    <body>{% extends 'base.html' %}
+
+<h1>Signup</h1>
+<form method ="post"
+  <table>
+    <tr>
+      <td><label for"username">Username</label></td>
+      <td>
+        <input name="username" type="text" value="{{ username }}" />
+        <span class = "error">{{ errors.username}}</span>
+      </td>
+    </tr>
+
+    <tr>
+      <td><label for="password">Password</label></td>
+      <td>
+        <input name="password" type="password"/>
+        <span class="error">{{ errors.password}}</span>
+      </td>
+    </tr>
+
+    <tr>
+      <td><label for="verify">Verify Password</label></td>
+      <td>
+        <input name="verify" type="passowrd"/>
+        <span class="verify">{{ errors.verify}}</span>
+      </td>
+    </tr>
+  </table>
+</form>
+
+<p>Already have an account? <a href="/login">Login In</a></p>
+
+    </body>
+</html>
